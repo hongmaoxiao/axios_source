@@ -84,7 +84,7 @@ var axios =
 	  // Provide alias for success
 	  promise.success = function success(fn) {
 	    promise.then(function(response) {
-	      fn(response)
+	      fn(response.data, response.status, response.headers, response.config)
 	    })
 	    return promise
 	  }
@@ -92,7 +92,7 @@ var axios =
 	  // Provide alias for error
 	  promise.error = function error(fn) {
 	    promise.then(null, function(response) {
-	      fn(response)
+	      fn(response.data, response.status, response.headers, response.config)
 	    })
 	    return promise
 	  }
@@ -1276,10 +1276,7 @@ var axios =
 	      (request.status >= 200 && request.status < 300
 	        ? resolve
 	        : reject)(
-	          response.data,
-	          response.status,
-	          response.headers,
-	          response.config
+	          response
 	        )
 	
 	      // Clean up request
