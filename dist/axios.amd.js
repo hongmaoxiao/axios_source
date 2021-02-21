@@ -996,7 +996,7 @@ define("axios", ["undefined"], function(__WEBPACK_EXTERNAL_MODULE_22__) { return
 	    return utils.isObject(data) &&
 	          !utils.isFile(data) &&
 	          !utils.isBlob(data) ?
-	            JSON.stringify(data) : null;
+	            JSON.stringify(data) : data;
 	  }],
 	
 	  transformResponse: [function (data) {
