@@ -124,7 +124,7 @@ define("axios", [], function() { return /******/ (function(modules) { // webpack
 	      : undefined
 	
 	    if (xsrfValue) {
-	      headers[config.xsrfCookieName || defaults.xsrfCookieName] = xsrfValue
+	      headers[config.xsrfHeaderName || defaults.xsrfHeaderName] = xsrfValue
 	    }
 	
 	    utils.forEach(headers, function(val, key) {
