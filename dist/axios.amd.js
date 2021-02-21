@@ -58,6 +58,7 @@ define("axios", [], function() { return /******/ (function(modules) { // webpack
 	var transformData = __webpack_require__(18)
 	var urlIsSameOrigin = __webpack_require__(19);
 	var utils = __webpack_require__(14)
+	var spread = __webpack_require__(20);
 	
 	var axios = module.exports = function axios(config) {
 	  config = utils.merge({
@@ -179,6 +180,10 @@ define("axios", [], function() { return /******/ (function(modules) { // webpack
 	
 	// Expose defaults
 	axios.defaults = defaults
+	
+	// Expose all/spread
+	axios.all = Promise.all
+	axios.spread = spread
 	
 	// Provide aliases for supported request methods
 	createShortMethods('delete', 'get', 'head');
@@ -1477,6 +1482,36 @@ define("axios", [], function() { return /******/ (function(modules) { // webpack
 	  var parsed = (utils.isString(requestUrl)) ? urlResolve(requestUrl) : requestUrl
 	  return (parsed.protocol === originUrl.protocol &&
 	        parsed.host === originUrl.host)
+	}
+
+/***/ }),
+/* 20 */
+/***/ (function(module, exports) {
+
+	/**
+	 * Syntactic sugar for invoking a function and expanding an array for arguments.
+	 *
+	 * Common use case would be to use `Function.prototype.apply`.
+	 *
+	 *  ```js
+	 *  function f(x, y, z) {}
+	 *  var args = [1, 2, 3];
+	 *  f.apply(null, args);
+	 *  ```
+	 *
+	 * With `spread` this example can be re-written.
+	 *
+	 *  ```js
+	 *  spread(function(x, y, z) {})([1, 2, 3]);
+	 *  ```
+	 *
+	 * @param {Function} callback
+	 * @returns {Function}
+	 */
+	module.exports = function spread(callback) {
+	  return function (arr) {
+	    callback.apply(null, arr)
+	  }
 	}
 
 /***/ })
