@@ -1745,6 +1745,11 @@ graceful-fs@~1.2.0:
   resolved "https://registry.npm.taobao.org/graceful-fs/download/graceful-fs-1.2.3.tgz#15a4806a57547cb2d2dbf27f42e89a8c3451b364"
   integrity sha1-FaSAaldUfLLS2/J/QuiajDRRs2Q=
 
+grunt-banner@^0.2.3:
+  version "0.2.3"
+  resolved "https://registry.npm.taobao.org/grunt-banner/download/grunt-banner-0.2.3.tgz#bcaa6d2505893d89315882191823109e6c99e0c5"
+  integrity sha1-vKptJQWJPYkxWIIZGCMQnmyZ4MU=
+
 grunt-contrib-clean@^0.6.0:
   version "0.6.0"
   resolved "https://registry.npm.taobao.org/grunt-contrib-clean/download/grunt-contrib-clean-0.6.0.tgz#f532dba4b8212674c7c013e146bda6638b9048f6"
