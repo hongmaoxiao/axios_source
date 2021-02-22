@@ -1,3 +1,4 @@
+require('es6-promise').polyfill();
 var axios = require('../../index');
 
 describe('promise', function () {
@@ -32,37 +33,6 @@ describe('promise', function () {
         expect(response.status).toEqual(200);
         expect(response.headers['content-type']).toEqual('application/json');
         expect(response.config.url).toEqual('/foo');
-        done();
-      }, 0);
-    }, 0);
-  });
-
-  it('should provide verbose arguments to success', function (done) {
-    var request, data, status, headers, config;
-
-    axios({
-      url: '/foo'
-    }).success(function (d, s, h, c) {
-      data = d;
-      status = s;
-      headers = h;
-      config = c;
-      fulfilled = true;
-    });
-
-    setTimeout(function () {
-      request = jasmine.Ajax.requests.mostRecent();
-
-      request.respondWith({
-        status: 200,
-        responseText: '{"hello":"world"}'
-      });
-
-      setTimeout(function () {
-        expect(data.hello).toEqual('world');
-        expect(status).toBe(200);
-        expect(headers['content-type']).toEqual('application/json');
-        expect(config.url).toEqual('/foo');
         done();
       }, 0);
     }, 0);

@@ -18,6 +18,10 @@ Promise based HTTP client for the browser and node.js
 - Automatic transforms for JSON data
 - Client side support for protecting against [XSRF](http://en.wikipedia.org/wiki/Cross-site_request_forgery)
 
+## Semver
+
+Until axios reaches a `1.0` release, breaking changes will be released with a new minor version. For example `0.5.1`, and `0.5.4` will have the same API, but `0.6.0` will have breaking changes.
+
 ## Installing
 
 Using bower:
@@ -36,6 +40,11 @@ $ npm install axios
 
 Tested to work with >=IE8, Chrome, Firefox, Safari, and Opera.
 
+## Promises
+
+axios depends on a native ES6 Promise implementation to be [supported](http://caniuse.com/promises).
+If your environment doesn't support ES6 Promises, you can [polyfill](https://github.com/jakearchibald/es6-promise).
+
 ## Example
 
 Performing a `GET` request
@@ -49,7 +58,7 @@ axios.get('/user?ID=12345')
   .catch(function (response) {
     console.log(response);
   });
-
+	
 // Optionally the request above could also be done as
 axios.get('/user', {
     params: {
@@ -147,7 +156,7 @@ This is the available config options for making requests. Only the `url` is requ
   // The last function in the array must return a string or an ArrayBuffer
   transformRequest: [function (data) {
     // Do whatever you want to transform the data
-
+	
     return data;
   }],
 
@@ -155,7 +164,7 @@ This is the available config options for making requests. Only the `url` is requ
   // it is passed to then/catch
   transformResponse: [function (data) {
     // Do whatever you want to transform the data
-
+	
     return data;
   }],
 
@@ -174,6 +183,10 @@ This is the available config options for making requests. Only the `url` is requ
     firstName: 'Fred'
   },
 
+  // `timeout` specifies the number of milliseconds before the request times out.
+  // If the request takes longer than `timeout`, the request will be aborted.
+  timeout: 1000,
+
   // `withCredentials` indicates whether or not cross-site Access-Control requests
   // should be made using credentials
   withCredentials: false, // default
@@ -186,13 +199,7 @@ This is the available config options for making requests. Only the `url` is requ
   xsrfCookieName: 'XSRF-TOKEN', // default
 
   // `xsrfHeaderName` is the name of the http header that carries the xsrf token value
-  xsrfHeaderName: 'X-XSRF-TOKEN', // default
-
-  // `progress` allows handling of progress events for 'POST' and 'PUT uploads'
-  // as well as 'GET' downloads
-  progress: function(progressEvent) {
-    // Do whatever you want with the native progress event
-  }
+  xsrfHeaderName: 'X-XSRF-TOKEN' // default
 }
 ```
 
@@ -207,7 +214,7 @@ The response for a request contains the following information.
 
   // `status` is the HTTP status code from the server response
   status: 200,
-
+  
   // `statusText` is the HTTP status message from the server response
   statusText: 'OK',
 
@@ -293,8 +300,6 @@ axios.get('/user?ID=12345');
 ## Credits
 
 axios is heavily inspired by the [$http service](https://docs.angularjs.org/api/ng/service/$http) provided in [Angular](https://angularjs.org/). Ultimately axios is an effort to provide a standalone `$http`-like service for use outside of Angular.
-
-axios uses the [es6-promise](https://github.com/jakearchibald/es6-promise) polyfill by [Jake Archibald](https://github.com/jakearchibald). Until we [can use](http://caniuse.com/promises) ES6 Promises natively in all browsers, this polyfill is a life saver.
 
 ## License
 
