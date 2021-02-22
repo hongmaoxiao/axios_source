@@ -1,4 +1,4 @@
-define("axios", ["undefined"], function(__WEBPACK_EXTERNAL_MODULE_3__) { return /******/ (function(modules) { // webpackBootstrap
+define("axios", ["{Promise: Promise}","undefined"], function(__WEBPACK_EXTERNAL_MODULE_7__, __WEBPACK_EXTERNAL_MODULE_8__) { return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
 /******/
@@ -50,9 +50,14 @@ define("axios", ["undefined"], function(__WEBPACK_EXTERNAL_MODULE_3__) { return 
 /* 1 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(process) {var Promise = __webpack_require__(3).Promise
-	var defaults = __webpack_require__(4)
-	var utils = __webpack_require__(5)
+	var defaults = __webpack_require__(2)
+	var utils = __webpack_require__(3)
+	var deprecatedMethod = __webpack_require__(4);
+	var dispatchRequest = __webpack_require__(5);
+	var InterceptorManager = __webpack_require__(9);
+	
+	// Polyfill ES6 Promise if needed
+	__webpack_require__(7).polyfill();
 	
 	var axios = module.exports = function axios(config) {
 	  config = utils.merge({
@@ -65,32 +70,21 @@ define("axios", ["undefined"], function(__WEBPACK_EXTERNAL_MODULE_3__) { return 
 	  // Don't allow overriding defaults.withCredentials
 	  config.withCredentials = config.withCredentials || defaults.withCredentials
 	
-	  var promise = new Promise(function (resolve, reject) {
-	    try {
-	      // For browsers use XHR adapter
-	      if (typeof window !== 'undefined') {
-	        __webpack_require__(6)(resolve, reject, config)
-	      }
-	      // For node use HTTP adapter
-	      else if (typeof process !== 'undefined') {
-	        __webpack_require__(3)(resolve, reject, config)
-	      }
-	    } catch (e) {
-	      reject(e)
-	    }
+	  // Hook up interceptors middleware
+	  var chain = [dispatchRequest, undefined]
+	  var promise = Promise.resolve(config)
+	
+	
+	  axios.interceptors.request.forEach(function (interceptor) {
+	    chain.unshift(interceptor.fulfilled, interceptor.rejected)
 	  })
 	
-	  function deprecatedMethod(method, instead, docs) {
-	    try {
-	      console.warn(
-	        'DEPRECATED method `' + method + '`.' +
-	        (instead ? ' Use `' + instead + '` instead.' : '') +
-	        ' This method will be removed in a future release.');
+	  axios.interceptors.response.forEach(function (interceptor) {
+	    chain.push(interceptor.fulfilled, interceptor.rejected)
+	  })
 	
-	      if (docs) {
-	        console.warn('For more information about usage see ' + docs);
-	      }
-	    } catch (e) {}
+	  while (chain.length) {
+	    promise = promise.then(chain.unshift(), chain.unshift())
 	  }
 	
 	  // Provide alias for success
@@ -123,7 +117,13 @@ define("axios", ["undefined"], function(__WEBPACK_EXTERNAL_MODULE_3__) { return 
 	axios.all = function (promises) {
 	  return Promise.all(promises)
 	}
-	axios.spread = __webpack_require__(12);
+	axios.spread = __webpack_require__(10);
+	
+	// interceptors
+	axios.interceptors = {
+	  request: new InterceptorManager(),
+	  response: new InterceptorManager()
+	}
 	
 	// Provide aliases for supported request methods
 	createShortMethods('delete', 'get', 'head');
@@ -151,10 +151,349 @@ define("axios", ["undefined"], function(__WEBPACK_EXTERNAL_MODULE_3__) { return 
 	    }
 	  })
 	}
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
 
 /***/ }),
 /* 2 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict'
+	
+	var utils = __webpack_require__(3)
+	
+	var JSON_START = /^\s*(\[|\{[^\{])/;
+	var JSON_END = /[\}\]]\s*$/;
+	var PROTECTION_PREFIX = /^\)\]\}',?\n/;
+	var DEFAULT_CONTENT_TYPE = {
+	  'Content-Type': 'application/x-www-form-urlencoded'
+	};
+	
+	module.exports = {
+	  transformRequest: [function (data, headers) {
+	    if (utils.isArrayBuffer(data)) {
+	      return data
+	    }
+	    if (utils.isArrayBufferView(data)) {
+	      return data.buffer
+	    }
+	    if (utils.isObject(data) &&
+	    !utils.isFile(data) &&
+	    !utils.isBlob(data)) {
+	      // Set application/json if no Content-Type has been specified
+	      if (!utils.isUndefined(headers) && utils.isUndefined(headers['Content-Type'])) {
+	        headers['Content-Type'] = 'application/json;charset=utf-8'
+	      }
+	      return JSON.stringify(data)
+	    }
+	    return data
+	  }],
+	
+	  transformResponse: [function (data) {
+	    if (typeof data === 'string') {
+	      data = data.replace(PROTECTION_PREFIX, '')
+	    }
+	    if (JSON_START.test(data) && JSON_END.test(data)) {
+	      data = JSON.parse(data)
+	    }
+	    return data
+	  }],
+	
+	  headers: {
+	    common: {
+	      'Accept': 'application/json, text/plain, */*'
+	    },
+	    patch: utils.merge(DEFAULT_CONTENT_TYPE),
+	    post: utils.merge(DEFAULT_CONTENT_TYPE),
+	    put: utils.merge(DEFAULT_CONTENT_TYPE),
+	  },
+	
+	  xsrfCookieName: 'XSRF-TOKEN',
+	  xsrfHeaderName: 'X-XSRF-TOKEN'
+	}
+	  
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports) {
+
+	// utils is a library of generic helper functions non-specific to axios
+	
+	var toString = Object.prototype.toString
+	
+	/**
+	 * Determine if a value is an Array
+	 *
+	 * @param {Object} val The value to test
+	 * @returns {boolean} True if value is an Array, otherwise false
+	 */
+	function isArray(val) {
+	  return toString.call(val) === '[object Array]'
+	}
+	
+	/**
+	 * Determine if a value is an ArrayBuffer
+	 *
+	 * @param {Object} val The value to test
+	 * @returns {boolean} True if value is an ArrayBuffer, otherwise false
+	 */
+	function isArrayBuffer(val) {
+	  return toString.call(val) === '[object ArrayBuffer]'
+	}
+	
+	/**
+	 * Determine if a value is a FormData
+	 *
+	 * @param {Object} val The value to test
+	 * @returns {boolean} True if value is an FormData, otherwise false
+	 */
+	function isFormData(val) {
+	  return toString.call(val) === '[object FormData]'
+	}
+	
+	/**
+	 * Determine if a value is a view on an ArrayBuffer
+	 *
+	 * @param {Object} val The value to test
+	 * @returns {boolean} True if value is a view on an ArrayBuffer, otherwise false
+	 */
+	function isArrayBufferView(val) {
+	  if ((typeof ArrayBuffer !== 'undefined') && (ArrayBuffer.isView)) {
+	    return ArrayBuffer.isView(val)
+	  } else {
+	    return (val) && (val.buffer) && (val.buffer instanceof ArrayBuffer)
+	  }
+	}
+	
+	/**
+	 * Determine if a value is a String
+	 *
+	 * @param {Object} val The value to test
+	 * @returns {boolean} True if value is a String, otherwise false
+	 */
+	function isString(val) {
+	  return typeof val === 'string'
+	}
+	
+	/**
+	 * Determine if a value is a Number
+	 *
+	 * @param {Object} val The value to test
+	 * @returns {boolean} True if value is a Number, otherwise false
+	 */
+	function isNumber(val) {
+	  return typeof val === 'number'
+	}
+	
+	/**
+	 * Determine if a value is undefined
+	 *
+	 * @param {Object} val The value to test
+	 * @returns {boolean} True if the value is undefined, otherwise false
+	 */
+	function isUndefined(val) {
+	  return typeof val === 'undefined'
+	}
+	
+	/**
+	 * Determine if a value is an Object
+	 *
+	 * @param {Object} val The value to test
+	 * @returns {boolean} True if value is an Object, otherwise false
+	 */
+	function isObject(val) {
+	  return val !== null && typeof val === 'object'
+	}
+	
+	/**
+	 * Determine if a value is a Date
+	 *
+	 * @param {Object} val The value to test
+	 * @returns {boolean} True if value is a Date, otherwise false
+	 */
+	function isDate(val) {
+	  return toString.call(val) === '[object Date]'
+	}
+	
+	/**
+	 * Determine if a value is a File
+	 *
+	 * @param {Object} val The value to test
+	 * @returns {boolean} True if value is a File, otherwise false
+	 */
+	function isFile(val) {
+	  return toString.call(val) === '[object File]'
+	}
+	
+	/**
+	 * Determine if a value is a Blob
+	 *
+	 * @param {Object} val The value to test
+	 * @returns {boolean} True if value is a Blob, otherwise false
+	 */
+	function isBlob(val) {
+	  return toString.call(val) === '[object Blob]'
+	}
+	
+	/**
+	 * Trim excess whitespace off the beginning and end of a string
+	 *
+	 * @param {String} str The String to trim
+	 * @returns {String} The String freed of excess whitespace
+	 */
+	function trim(str) {
+	  return str.replace(/^\s*/, '').replace(/\s*$/, '')
+	}
+	
+	
+	/**
+	 * Iterate over an Array or an Object invoking a function for each item.
+	 *
+	 * If `obj` is an Array or arguments callback will be called passing
+	 * the value, index, and complete array for each item.
+	 *
+	 * If 'obj' is an Object callback will be called passing
+	 * the value, key, and complete object for each property.
+	 *
+	 * @param {Object|Array} obj The object to iterate
+	 * @param {Function} fn The callback to invoke for each item
+	 */
+	function forEach(obj, fn) {
+	  // Don't bother if no value provided
+	  if (obj === null || typeof obj === 'undefined') {
+	    return
+	  }
+	  
+	  // Check if obj is array-like
+	  var isArray = obj.constructor === Array || typeof obj.callee === 'function';
+	
+	  // Force an array if not already something iterable
+	  if (typeof obj !== 'object' && !isArray) {
+	    obj = [obj]
+	  }
+	
+	  // Iterate over array values
+	  if (isArray) {
+	    for (var i = 0; i < obj.length; i++) {
+	      fn.call(null, obj[i], i, obj)
+	    }
+	  }
+	  // Iterate over object keys
+	  else {
+	    for (var key in obj) {
+	      if (Object.hasOwnProperty.call(obj, key)) {
+	        fn.call(null, obj[key], key, obj)
+	      }
+	    }
+	  }
+	}
+	
+	/**
+	 * Accepts varargs expecting each argument to be an object, then
+	 * immutably merges the properties of each object and returns result.
+	 *
+	 * When multiple objects contain the same key the later object in
+	 * the arguments list will take precedence.
+	 *
+	 * Example:
+	 *
+	 * ```js
+	 * var result = merge({foo: 123}, {foo: 456});
+	 * console.log(result.foo); // outputs 456
+	 * ```
+	 *
+	 * @param {Object} obj1 Object to merge
+	 * @returns {Object} Result of all merge properties
+	 */
+	function merge(obj1/*, obj2, obj3, ...*/) {
+	  var result = {}
+	
+	  forEach(arguments, function(obj) {
+	    forEach(obj, function (val, key) {
+	      result[key] = val[key]
+	    })
+	  })
+	
+	  return result
+	}
+	
+	module.exports = {
+	  isArray: isArray,
+	  isArrayBuffer: isArrayBuffer,
+	  isFormData: isFormData,
+	  isArrayBufferView: isArrayBufferView,
+	  isString: isString,
+	  isNumber: isNumber,
+	  isObject: isObject,
+	  isUndefined: isUndefined,
+	  isDate: isDate,
+	  isFile: isFile,
+	  isBlob: isBlob,
+	  forEach: forEach,
+	  merge: merge,
+	  trim: trim
+	}
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports) {
+
+	'use strict';
+	
+	/**
+	 * Supply a warning to the developer that a method they are using
+	 * has been deprecated.
+	 *
+	 * @param {string} method The name of the deprecated method
+	 * @param {string} [instead] The alternate method to use if applicable
+	 * @param {string} [docs] The documentation URL to get further details
+	 */
+	module.exports = function deprecatedMethod(method, instead, docs) {
+	  try {
+	    console.warn(
+	      'DEPRECATED method `' + method + '`.' +
+	      (instead ? ' Use `' + instead + '` instead.' : '') +
+	      ' This method will be removed in a future release.');
+	
+	    if (docs) {
+	      console.warn('For more information about usage see ' + docs);
+	    }
+	  } catch (e) {}
+	}
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
+	
+	var Promise = __webpack_require__(7).Promise;
+	
+	/**
+	 * Dispatch a request to the server using whichever adapter
+	 * is supported by the current environment.
+	 *
+	 * @param {object} config The config that is to be used for the request
+	 * @returns {Promise} The Promise to be fulfilled
+	 */
+	module.exports = function dispatchRequest(config) {
+	  return new Promise(function (resolve, reject) {
+	    try {
+	      // For browsers use XHR adapter
+	      if (typeof window !== 'undefined') {
+	        __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"./adapters/xhr\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()))(resolve, reject, config)
+	      }
+	      // For node use HTTP adapter
+	      else if (typeof process !== 'undefined') {
+	        __webpack_require__(8)(resolve, reject, config)
+	      }
+	    } catch (e) {
+	      reject(e)
+	    }
+	  })
+	}
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6)))
+
+/***/ }),
+/* 6 */
 /***/ (function(module, exports) {
 
 	// shim for using process in browser
@@ -344,598 +683,75 @@ define("axios", ["undefined"], function(__WEBPACK_EXTERNAL_MODULE_3__) { return 
 
 
 /***/ }),
-/* 3 */
-/***/ (function(module, exports) {
-
-	module.exports = undefined;
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict'
-	
-	var utils = __webpack_require__(5)
-	
-	var JSON_START = /^\s*(\[|\{[^\{])/;
-	var JSON_END = /[\}\]]\s*$/;
-	var PROTECTION_PREFIX = /^\)\]\}',?\n/;
-	var DEFAULT_CONTENT_TYPE = {
-	  'Content-Type': 'application/x-www-form-urlencoded'
-	};
-	
-	module.exports = {
-	  transformRequest: [function (data, headers) {
-	    if (utils.isArrayBuffer(data)) {
-	      return data
-	    }
-	    if (utils.isArrayBufferView(data)) {
-	      return data.buffer
-	    }
-	    if (utils.isObject(data) &&
-	    !utils.isFile(data) &&
-	    !utils.isBlob(data)) {
-	      // Set application/json if no Content-Type has been specified
-	      if (!utils.isUndefined(headers) && utils.isUndefined(headers['Content-Type'])) {
-	        headers['Content-Type'] = 'application/json;charset=utf-8'
-	      }
-	      return JSON.stringify(data)
-	    }
-	    return data
-	  }],
-	
-	  transformResponse: [function (data) {
-	    if (typeof data === 'string') {
-	      data = data.replace(PROTECTION_PREFIX, '')
-	    }
-	    if (JSON_START.test(data) && JSON_END.test(data)) {
-	      data = JSON.parse(data)
-	    }
-	    return data
-	  }],
-	
-	  headers: {
-	    common: {
-	      'Accept': 'application/json, text/plain, */*'
-	    },
-	    patch: utils.merge(DEFAULT_CONTENT_TYPE),
-	    post: utils.merge(DEFAULT_CONTENT_TYPE),
-	    put: utils.merge(DEFAULT_CONTENT_TYPE),
-	  },
-	
-	  xsrfCookieName: 'XSRF-TOKEN',
-	  xsrfHeaderName: 'X-XSRF-TOKEN'
-	}
-	  
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports) {
-
-	// utils is a library of generic helper functions non-specific to axios
-	
-	var toString = Object.prototype.toString
-	
-	/**
-	 * Determine if a value is an Array
-	 *
-	 * @param {Object} val The value to test
-	 * @returns {boolean} True if value is an Array, otherwise false
-	 */
-	function isArray(val) {
-	  return toString.call(val) === '[object Array]'
-	}
-	
-	/**
-	 * Determine if a value is an ArrayBuffer
-	 *
-	 * @param {Object} val The value to test
-	 * @returns {boolean} True if value is an ArrayBuffer, otherwise false
-	 */
-	function isArrayBuffer(val) {
-	  return toString.call(val) === '[object ArrayBuffer]'
-	}
-	
-	/**
-	 * Determine if a value is a view on an ArrayBuffer
-	 *
-	 * @param {Object} val The value to test
-	 * @returns {boolean} True if value is a view on an ArrayBuffer, otherwise false
-	 */
-	function isArrayBufferView(val) {
-	  if ((typeof ArrayBuffer !== 'undefined') && (ArrayBuffer.isView)) {
-	    return ArrayBuffer.isView(val)
-	  } else {
-	    return (val) && (val.buffer) && (val.buffer instanceof ArrayBuffer)
-	  }
-	}
-	
-	/**
-	 * Determine if a value is a String
-	 *
-	 * @param {Object} val The value to test
-	 * @returns {boolean} True if value is a String, otherwise false
-	 */
-	function isString(val) {
-	  return typeof val === 'string'
-	}
-	
-	/**
-	 * Determine if a value is a Number
-	 *
-	 * @param {Object} val The value to test
-	 * @returns {boolean} True if value is a Number, otherwise false
-	 */
-	function isNumber(val) {
-	  return typeof val === 'number'
-	}
-	
-	/**
-	 * Determine if a value is undefined
-	 *
-	 * @param {Object} val The value to test
-	 * @returns {boolean} True if the value is undefined, otherwise false
-	 */
-	function isUndefined(val) {
-	  return typeof val === 'undefined'
-	}
-	
-	/**
-	 * Determine if a value is an Object
-	 *
-	 * @param {Object} val The value to test
-	 * @returns {boolean} True if value is an Object, otherwise false
-	 */
-	function isObject(val) {
-	  return val !== null && typeof val === 'object'
-	}
-	
-	/**
-	 * Determine if a value is a Date
-	 *
-	 * @param {Object} val The value to test
-	 * @returns {boolean} True if value is a Date, otherwise false
-	 */
-	function isDate(val) {
-	  return toString.call(val) === '[object Date]'
-	}
-	
-	/**
-	 * Determine if a value is a File
-	 *
-	 * @param {Object} val The value to test
-	 * @returns {boolean} True if value is a File, otherwise false
-	 */
-	function isFile(val) {
-	  return toString.call(val) === '[object File]'
-	}
-	
-	/**
-	 * Determine if a value is a Blob
-	 *
-	 * @param {Object} val The value to test
-	 * @returns {boolean} True if value is a Blob, otherwise false
-	 */
-	function isBlob(val) {
-	  return toString.call(val) === '[object Blob]'
-	}
-	
-	/**
-	 * Trim excess whitespace off the beginning and end of a string
-	 *
-	 * @param {String} str The String to trim
-	 * @returns {String} The String freed of excess whitespace
-	 */
-	function trim(str) {
-	  return str.replace(/^\s*/, '').replace(/\s*$/, '')
-	}
-	
-	
-	/**
-	 * Iterate over an Array or an Object invoking a function for each item.
-	 *
-	 * If `obj` is an Array or arguments callback will be called passing
-	 * the value, index, and complete array for each item.
-	 *
-	 * If 'obj' is an Object callback will be called passing
-	 * the value, key, and complete object for each property.
-	 *
-	 * @param {Object|Array} obj The object to iterate
-	 * @param {Function} fn The callback to invoke for each item
-	 */
-	function forEach(obj, fn) {
-	  // Don't bother if no value provided
-	  if (obj === null || typeof obj === 'undefined') {
-	    return
-	  }
-	  
-	  // Check if obj is array-like
-	  var isArray = obj.constructor === Array || typeof obj.callee === 'function';
-	
-	  // Force an array if not already something iterable
-	  if (typeof obj !== 'object' && !isArray) {
-	    obj = [obj]
-	  }
-	
-	  // Iterate over array values
-	  if (isArray) {
-	    for (var i = 0; i < obj.length; i++) {
-	      fn.call(null, obj[i], i, obj)
-	    }
-	  }
-	  // Iterate over object keys
-	  else {
-	    for (var key in obj) {
-	      if (Object.hasOwnProperty.call(obj, key)) {
-	        fn.call(null, obj[key], key, obj)
-	      }
-	    }
-	  }
-	}
-	
-	/**
-	 * Accepts varargs expecting each argument to be an object, then
-	 * immutably merges the properties of each object and returns result.
-	 *
-	 * When multiple objects contain the same key the later object in
-	 * the arguments list will take precedence.
-	 *
-	 * Example:
-	 *
-	 * ```js
-	 * var result = merge({foo: 123}, {foo: 456});
-	 * console.log(result.foo); // outputs 456
-	 * ```
-	 *
-	 * @param {Object} obj1 Object to merge
-	 * @returns {Object} Result of all merge properties
-	 */
-	function merge(obj1/*, obj2, obj3, ...*/) {
-	  var result = {}
-	
-	  forEach(arguments, function(obj) {
-	    forEach(obj, function (val, key) {
-	      result[key] = val[key]
-	    })
-	  })
-	
-	  return result
-	}
-	
-	module.exports = {
-	  isArray: isArray,
-	  isArrayBuffer: isArrayBuffer,
-	  isArrayBufferView: isArrayBufferView,
-	  isString: isString,
-	  isNumber: isNumber,
-	  isObject: isObject,
-	  isUndefined: isUndefined,
-	  isDate: isDate,
-	  isFile: isFile,
-	  isBlob: isBlob,
-	  forEach: forEach,
-	  merge: merge,
-	  trim: trim
-	}
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	var defaults = __webpack_require__(4);
-	var utils = __webpack_require__(5);
-	var buildUrl = __webpack_require__(7);
-	var cookies = __webpack_require__(8);
-	var parseHeaders = __webpack_require__(9);
-	var transformData = __webpack_require__(10);
-	var urlIsSameOrigin = __webpack_require__(11);
-	
-	module.exports = function xhrAdapter(resolve, reject, config) {
-	  // Transform request data
-	  var data = transformData(
-	    config.data,
-	    config.headers,
-	    config.transformRequest
-	  )
-	
-	  // Merge headers
-	  var headers = utils.merge(
-	    defaults.headers.common,
-	    defaults.headers[config.method] || {},
-	    config.headers || {}
-	  )
-	
-	  // Create the request
-	  var request = new(XMLHttpRequest || ActiveXObject)('Microsoft.XMLHTTP')
-	  request.open(config.method, buildUrl(config.url, config.params), true)
-	
-	  // Listen for ready state
-	  request.onreadystatechange = function() {
-	    if (request && request.readyState === 4) {
-	      // Prepare the response
-	      var headers = parseHeaders(request.getAllResponseHeaders())
-	      var response = {
-	        data: transformData(
-	          request.responseText,
-	          headers,
-	          config.transformResponse
-	        ),
-	        status: request.status,
-	        headers: headers,
-	        config: config
-	      }
-	
-	      // Resolve or reject the Promise based on the status
-	      (request.status >= 200 && request.status < 300
-	        ? resolve
-	        : reject)(
-	          response
-	        )
-	
-	      // Clean up request
-	      request = null
-	    }
-	  }
-	
-	  // Add xsrf header
-	  var xsrfValue = urlIsSameOrigin(config.url)
-	    ? cookies.read(config.xsrfCookieName || defaults.xsrfCookieName)
-	    : undefined
-	
-	  if (xsrfValue) {
-	    headers[config.xsrfHeaderName || defaults.xsrfHeaderName] = xsrfValue
-	  }
-	
-	  // Add headers to the request
-	  utils.forEach(headers, function(val, key) {
-	    // Remove Content-Type if data is undefined
-	    if (!data && key.toLowerCase() === 'content-type') {
-	      delete headers[key]
-	    }
-	    // Otherwise add header to the request
-	    else {
-	      request.setRequestHeader(key, val)
-	    }
-	  })
-	
-	  // Add withCredentials to request if needed
-	  if (config.withCredentials) {
-	    request.withCredentials = true
-	  }
-	
-	  // Add responseType to request if needed
-	  if (config.responseType) {
-	    try {
-	      request.responseType = config.responseType
-	    } catch (e) {
-	      if (request.responseType !== 'json') {
-	        throw e
-	      }
-	    }
-	  }
-	
-	  if (utils.isArrayBuffer(data)) {
-	    data = new DataView(data)
-	  }
-	
-	  // Send the request
-	  request.send(data)
-	}
-
-/***/ }),
 /* 7 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-	'use strict'
-	
-	var utils = __webpack_require__(5)
-	
-	function encode(val) {
-	  return encodeURIComponent(val).
-	    replace(/%40/gi, '@').
-	    replace(/%3A/gi, ':').
-	    replace(/%24/g, '$').
-	    replace(/%2C/gi, ',').
-	    replace(/%20/gi, '+')
-	}
-	
-	module.exports = function buildUrl(url, params) {
-	  if (!params) {
-	    return url
-	  }
-	
-	  var parts = []
-	
-	  utils.forEach(params, function (val, key) {
-	    if (val === null || typeof val === 'undefined') {
-	      return
-	    }
-	
-	    if (!utils.isArray(val)) {
-	      val = [val]
-	    }
-	
-	    utils.forEach(val, function (v) {
-	      if (utils.isDate(val)) {
-	        v = v.toISOString()
-	      } else if (utils.isObject(val)) {
-	        v = JSON.stringify(v)
-	      }
-	      parts.push(encode(key) + '=' + encode(v))
-	    })
-	  })
-	
-	  if (parts.length > 0) {
-	    url += (url.indexOf('?') === -1 ? '?' : '&') + parts.join('&')
-	  }
-	
-	  return url
-	}
+	module.exports = __WEBPACK_EXTERNAL_MODULE_7__;
 
 /***/ }),
 /* 8 */
-/***/ (function(module, exports, __webpack_require__) {
+/***/ (function(module, exports) {
 
-	'use strict'
-	
-	var utils = __webpack_require__(5)
-	
-	module.exports = {
-	  write: function write(name, value, expires, path, domain, secure) {
-	    var cookie = []
-	    cookie.push(name + '=' + encodeURIComponent(value))
-	
-	    if (utils.isNumber(expires)) {
-	      cookie.push('expires=' + new Date(expires).toGMTString())
-	    }
-	
-	    if (utils.isString(path)) {
-	      cookie.push('path=' + path)
-	    }
-	
-	    if (utils.isString(domain)) {
-	      cookie.push('domain=' + domain)
-	    }
-	
-	    if (secure === true) {
-	      cookie.push('secure')
-	    }
-	
-	    document.cookie = cookie.join('; ')
-	  },
-	
-	  read: function read(name) {
-	    var match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'))
-	    return (match ? decodeURIComponent(match[3]) : null)
-	  },
-	
-	  remove: function remove(name) {
-	    this.write(name, '', Date.now() - 86400000)
-	  }
-	}
+	if(typeof undefined === 'undefined') {var e = new Error("Cannot find module \"undefined\""); e.code = 'MODULE_NOT_FOUND'; throw e;}
+	module.exports = undefined;
 
 /***/ }),
 /* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	'use strict'
+	var utils = __webpack_require__(3)
 	
-	var utils = __webpack_require__(5)
+	function InterceptorManager() {
+	  this.handlers = []
+	}
 	
 	/**
-	 * Parse headers into an object
+	 * Add a new interceptor to the stack
 	 *
-	 * ```
-	 * Date: Wed, 27 Aug 2014 08:58:49 GMT
-	 * Content-Type: application/json
-	 * Connection: keep-alive
-	 * Transfer-Encoding: chunked
-	 * ```
+	 * @param {Function} fulfilled The function to handle `then` for a `Promise`
+	 * @param {Function} rejected The function to handle `reject` for a `Promise`
 	 *
-	 * @param {String} headers Headers needing to be parsed
-	 * @returns {Object} Headers parsed into an object
+	 * @return {Number} An ID used to remove interceptor later
 	 */
-	module.exports = function parseHeaders(headers) {
-	  var parsed = {}, key, val, i
+	InterceptorManager.prototype.use = function (fulfilled, rejected) {
+	  this.handlers.push({
+	    fulfilled: fulfilled,
+	    rejected: rejected
+	  })
+	  return this.handlers.length - 1
+	}
 	
-	  if (!headers) {
-	    return parsed
+	/**
+	 * Remove an interceptor from the stack
+	 *
+	 * @param {Number} id The ID that was returned by `use`
+	 */
+	InterceptorManager.prototype.eject = function (id) {
+	  if (this.handlers[id]) {
+	    this.handlers[id] = null
 	  }
+	}
 	
-	  utils.forEach(headers.split('\n'), function(line) {
-	    i = line.indexOf(':')
-	    key = utils.trim(line.substr(0, i).toLowerCase())
-	    val = utils.trim(line.substr(i + 1))
-	
-	    if (key) {
-	      parsed[key] = parsed[key] ? parsed[key] + ', ' + val : val
+	/**
+	 * Iterate over all the registered interceptors
+	 *
+	 * This method is particularly useful for skipping over any
+	 * interceptors that may have become `null` calling `remove`.
+	 *
+	 * @param {Function} fn The function to call for each interceptor
+	 */
+	InterceptorManager.prototype.forEach = function (fn) {
+	  utils.forEach(this.handlers, function (h) {
+	    if (h !== null) {
+	      fn(h)
 	    }
 	  })
-	
-	  return parsed
 	}
+	
+	module.exports = InterceptorManager
 
 /***/ }),
 /* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict'
-	
-	var utils = __webpack_require__(5)
-	
-	/**
-	 * Transform the data for a request or a response
-	 *
-	 * @param {Object|String} data The data to be transformed
-	 * @param {Array} headers The headers for the request or response
-	 * @param {Array|Function} fns A single function or Array of functions
-	 * @returns {*} The resulting transformed data
-	 */
-	module.exports = function transformData(data, headers, fns) {
-	  utils.forEach(fns, function(fn) {
-	    data = fn(data, headers)
-	  })
-	
-	  return data
-	}
-
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict'
-	
-	var msie = /(msie|trident)/i.test(navigator.userAgent)
-	var utils = __webpack_require__(5)
-	var urlParsingNode = document.createElement('a')
-	var originUrl = urlResolve(window.location.href)
-	
-	/**
-	 * Parse a URL to discover it's components
-	 *
-	 * @param {String} url The URL to be parsed
-	 * @returns {Object}
-	 */
-	function urlResolve(url) {
-	  var href = url
-	
-	  if (msie) {
-	    // IE needs attribute set twice to normalize properties
-	    urlParsingNode.setAttribute('href', href)
-	    href = urlParsingNode.href
-	  }
-	
-	  urlParsingNode.setAttribute('href', href)
-	
-	  // urlParsingNode provides the UrlUtils interface - http://url.spec.whatwg.org/#urlutils
-	  return {
-	    href: urlParsingNode.href,
-	    protocol: urlParsingNode.protocol ? urlParsingNode.protocol.replace(/:$/, '') : '',
-	    host: urlParsingNode.host,
-	    search: urlParsingNode.search ? urlParsingNode.search.replace(/^\?/, '') : '',
-	    hash: urlParsingNode.hash ? urlParsingNode.hash.replace(/^#/, '') : '',
-	    hostname: urlParsingNode.hostname,
-	    port: urlParsingNode.port,
-	    pathname: (urlParsingNode.pathname.charAt(0) === '/')
-	      ? urlParsingNode.pathname
-	      : '/' + urlParsingNode.pathname
-	  }
-	}
-	
-	/**
-	 * Determine if a URL shares the same origin as the current location
-	 *
-	 * @param {String} requestUrl The URL to test
-	 * @returns {boolean} True if URL shares the same origin, otherwise false
-	 */
-	module.exports = function urlIsSameOrigin(requestUrl) {
-	  var parsed = (utils.isString(requestUrl)) ? urlResolve(requestUrl) : requestUrl
-	  return (parsed.protocol === originUrl.protocol &&
-	        parsed.host === originUrl.host)
-	}
-
-/***/ }),
-/* 12 */
 /***/ (function(module, exports) {
 
 	/**
