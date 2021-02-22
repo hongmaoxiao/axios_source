@@ -15,6 +15,8 @@ describe('api', function () {
 
     expect(typeof promise.then).toEqual('function');
     expect(typeof promise.catch).toEqual('function');
+    expect(typeof promise.success).toEqual('function');
+    expect(typeof promise.error).toEqual('function');
   });
 
   it('should have defaults', function () {

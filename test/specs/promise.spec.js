@@ -1,4 +1,3 @@
-require('es6-promise').polyfill();
 var axios = require('../../index');
 
 describe('promise', function () {
@@ -38,6 +37,37 @@ describe('promise', function () {
     }, 0);
   });
 
+  it('should provide verbose arguments to success', function (done) {
+    var request, data, status, headers, config;
+
+    axios({
+      url: '/foo'
+    }).success(function (d, s, h, c) {
+      data = d;
+      status = s;
+      headers = h;
+      config = c;
+      fulfilled = true;
+    });
+
+    setTimeout(function () {
+      request = jasmine.Ajax.requests.mostRecent();
+
+      request.respondWith({
+        status: 200,
+        responseText: '{"hello":"world"}'
+      });
+
+      setTimeout(function () {
+        expect(data.hello).toEqual('world');
+        expect(status).toBe(200);
+        expect(headers['content-type']).toEqual('application/json');
+        expect(config.url).toEqual('/foo');
+        done();
+      }, 0);
+    }, 0);
+  });
+
   it('should support all', function (done) {
     var fulfilled = false;
 
@@ -54,15 +84,23 @@ describe('promise', function () {
   it('should support spread', function (done) {
     var sum = 0;
     var fulfilled = false;
+    var result;
 
-    axios.all([123, 456]).then(axios.spread(function (a, b) {
-      sum = a + b;
-      fulfilled = true;
-    }));
+    axios
+      .all([123, 456])
+      .then(axios.spread(function (a, b) {
+        sum = a + b;
+        fulfilled = true;
+        return 'hello world';
+      }))
+      .then(function (res) {
+        result = res;
+      });
 
     setTimeout(function () {
       expect(fulfilled).toEqual(true);
       expect(sum).toEqual(123 + 456);
+      expect(result).toEqual('hello world');
       done();
     }, 0);
   });
