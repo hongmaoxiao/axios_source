@@ -55,13 +55,13 @@ var axios =
 	var utils = __webpack_require__(3)
 	var deprecatedMethod = __webpack_require__(4);
 	var dispatchRequest = __webpack_require__(5);
-	var InterceptorManager = __webpack_require__(14);
+	var InterceptorManager = __webpack_require__(8);
 	
 	// Polyfill ES6 Promise if needed
 	(function() {
 	  // webpack is being used to set es6-promise to the native Promise
 	  // for the standalone build. It's necessary to make sure polyfill exists.
-	  var P = __webpack_require__(7)
+	  var P = __webpack_require__(9)
 	  if (P && typeof P.polyfill === 'function') {
 	    P.polyfill()
 	  }
@@ -473,8 +473,6 @@ var axios =
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
 	
-	var Promise = __webpack_require__(7).Promise;
-	
 	/**
 	 * Dispatch a request to the server using whichever adapter
 	 * is supported by the current environment.
@@ -491,7 +489,7 @@ var axios =
 	      }
 	      // For node use HTTP adapter
 	      else if (typeof process !== 'undefined') {
-	        __webpack_require__(13)(resolve, reject, config)
+	        __webpack_require__(7)(resolve, reject, config)
 	      }
 	    } catch (e) {
 	      reject(e)
@@ -692,6 +690,68 @@ var axios =
 
 /***/ }),
 /* 7 */
+/***/ (function(module, exports) {
+
+	if(typeof undefined === 'undefined') {var e = new Error("Cannot find module \"undefined\""); e.code = 'MODULE_NOT_FOUND'; throw e;}
+	module.exports = undefined;
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	var utils = __webpack_require__(3)
+	
+	function InterceptorManager() {
+	  this.handlers = []
+	}
+	
+	/**
+	 * Add a new interceptor to the stack
+	 *
+	 * @param {Function} fulfilled The function to handle `then` for a `Promise`
+	 * @param {Function} rejected The function to handle `reject` for a `Promise`
+	 *
+	 * @return {Number} An ID used to remove interceptor later
+	 */
+	InterceptorManager.prototype.use = function (fulfilled, rejected) {
+	  this.handlers.push({
+	    fulfilled: fulfilled,
+	    rejected: rejected
+	  })
+	  return this.handlers.length - 1
+	}
+	
+	/**
+	 * Remove an interceptor from the stack
+	 *
+	 * @param {Number} id The ID that was returned by `use`
+	 */
+	InterceptorManager.prototype.eject = function (id) {
+	  if (this.handlers[id]) {
+	    this.handlers[id] = null
+	  }
+	}
+	
+	/**
+	 * Iterate over all the registered interceptors
+	 *
+	 * This method is particularly useful for skipping over any
+	 * interceptors that may have become `null` calling `remove`.
+	 *
+	 * @param {Function} fn The function to call for each interceptor
+	 */
+	InterceptorManager.prototype.forEach = function (fn) {
+	  utils.forEach(this.handlers, function (h) {
+	    if (h !== null) {
+	      fn(h)
+	    }
+	  })
+	}
+	
+	module.exports = InterceptorManager
+
+/***/ }),
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var require;var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(process, setImmediate, global, module) {/*!
@@ -830,7 +890,7 @@ var axios =
 	    function lib$es6$promise$asap$$attemptVertex() {
 	      try {
 	        var r = require;
-	        var vertx = __webpack_require__(11);
+	        var vertx = __webpack_require__(13);
 	        lib$es6$promise$asap$$vertxNext = vertx.runOnLoop || vertx.runOnContext;
 	        return lib$es6$promise$asap$$useVertxTimer();
 	      } catch(e) {
@@ -1655,7 +1715,7 @@ var axios =
 	    };
 	
 	    /* global define:true module:true window: true */
-	    if ("function" === 'function' && __webpack_require__(12)['amd']) {
+	    if ("function" === 'function' && __webpack_require__(14)['amd']) {
 	      !(__WEBPACK_AMD_DEFINE_RESULT__ = function() { return lib$es6$promise$umd$$ES6Promise; }.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
 	    } else if (typeof module !== 'undefined' && module['exports']) {
 	      module['exports'] = lib$es6$promise$umd$$ES6Promise;
@@ -1667,10 +1727,10 @@ var axios =
 	}).call(this);
 	
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6), __webpack_require__(8).setImmediate, (function() { return this; }()), __webpack_require__(10)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6), __webpack_require__(10).setImmediate, (function() { return this; }()), __webpack_require__(12)(module)))
 
 /***/ }),
-/* 8 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {var scope = (typeof global !== "undefined" && global) ||
@@ -1726,7 +1786,7 @@ var axios =
 	};
 	
 	// setimmediate attaches itself to the global object
-	__webpack_require__(9);
+	__webpack_require__(11);
 	// On some exotic environments, it's not clear which object `setimmediate` was
 	// able to install onto.  Search each possibility in the same order as the
 	// `setimmediate` library.
@@ -1740,7 +1800,7 @@ var axios =
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }),
-/* 9 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
@@ -1933,7 +1993,7 @@ var axios =
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(6)))
 
 /***/ }),
-/* 10 */
+/* 12 */
 /***/ (function(module, exports) {
 
 	module.exports = function(module) {
@@ -1949,79 +2009,17 @@ var axios =
 
 
 /***/ }),
-/* 11 */
+/* 13 */
 /***/ (function(module, exports) {
 
 	/* (ignored) */
 
 /***/ }),
-/* 12 */
+/* 14 */
 /***/ (function(module, exports) {
 
 	module.exports = function() { throw new Error("define cannot be used indirect"); };
 
-
-/***/ }),
-/* 13 */
-/***/ (function(module, exports) {
-
-	if(typeof undefined === 'undefined') {var e = new Error("Cannot find module \"undefined\""); e.code = 'MODULE_NOT_FOUND'; throw e;}
-	module.exports = undefined;
-
-/***/ }),
-/* 14 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	var utils = __webpack_require__(3)
-	
-	function InterceptorManager() {
-	  this.handlers = []
-	}
-	
-	/**
-	 * Add a new interceptor to the stack
-	 *
-	 * @param {Function} fulfilled The function to handle `then` for a `Promise`
-	 * @param {Function} rejected The function to handle `reject` for a `Promise`
-	 *
-	 * @return {Number} An ID used to remove interceptor later
-	 */
-	InterceptorManager.prototype.use = function (fulfilled, rejected) {
-	  this.handlers.push({
-	    fulfilled: fulfilled,
-	    rejected: rejected
-	  })
-	  return this.handlers.length - 1
-	}
-	
-	/**
-	 * Remove an interceptor from the stack
-	 *
-	 * @param {Number} id The ID that was returned by `use`
-	 */
-	InterceptorManager.prototype.eject = function (id) {
-	  if (this.handlers[id]) {
-	    this.handlers[id] = null
-	  }
-	}
-	
-	/**
-	 * Iterate over all the registered interceptors
-	 *
-	 * This method is particularly useful for skipping over any
-	 * interceptors that may have become `null` calling `remove`.
-	 *
-	 * @param {Function} fn The function to call for each interceptor
-	 */
-	InterceptorManager.prototype.forEach = function (fn) {
-	  utils.forEach(this.handlers, function (h) {
-	    if (h !== null) {
-	      fn(h)
-	    }
-	  })
-	}
-	
-	module.exports = InterceptorManager
 
 /***/ }),
 /* 15 */

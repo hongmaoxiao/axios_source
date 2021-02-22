@@ -55,13 +55,13 @@ var axios =
 	var utils = __webpack_require__(3)
 	var deprecatedMethod = __webpack_require__(4);
 	var dispatchRequest = __webpack_require__(5);
-	var InterceptorManager = __webpack_require__(9);
+	var InterceptorManager = __webpack_require__(8);
 	
 	// Polyfill ES6 Promise if needed
 	(function() {
 	  // webpack is being used to set es6-promise to the native Promise
 	  // for the standalone build. It's necessary to make sure polyfill exists.
-	  var P = __webpack_require__(7)
+	  var P = __webpack_require__(9)
 	  if (P && typeof P.polyfill === 'function') {
 	    P.polyfill()
 	  }
@@ -473,8 +473,6 @@ var axios =
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
 	
-	var Promise = __webpack_require__(7).Promise;
-	
 	/**
 	 * Dispatch a request to the server using whichever adapter
 	 * is supported by the current environment.
@@ -491,7 +489,7 @@ var axios =
 	      }
 	      // For node use HTTP adapter
 	      else if (typeof process !== 'undefined') {
-	        __webpack_require__(8)(resolve, reject, config)
+	        __webpack_require__(7)(resolve, reject, config)
 	      }
 	    } catch (e) {
 	      reject(e)
@@ -694,17 +692,11 @@ var axios =
 /* 7 */
 /***/ (function(module, exports) {
 
-	module.exports = {Promise: Promise};
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports) {
-
 	if(typeof undefined === 'undefined') {var e = new Error("Cannot find module \"undefined\""); e.code = 'MODULE_NOT_FOUND'; throw e;}
 	module.exports = undefined;
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	var utils = __webpack_require__(3)
@@ -757,6 +749,12 @@ var axios =
 	}
 	
 	module.exports = InterceptorManager
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports) {
+
+	module.exports = {Promise: Promise};
 
 /***/ }),
 /* 10 */
