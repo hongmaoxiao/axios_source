@@ -1,4 +1,4 @@
-// Type definitions for Axios v0.4.1
+// Type definitions for Axios v0.6.0
 // Project: https://github.com/mzabriskie/axios
 
 
@@ -26,8 +26,8 @@ declare module axios {
   }
 
   interface Promise {
-    then(onFulfilled:(response: axios.Response) => void): axios.Promise;
-    catch(onRejected:(response: axios.Response) => void): axios.Promise;
+    then(response: axios.Response): axios.Promise;
+    catch(response: axios.Response): axios.Promise;
   }
 
   interface RequestOptions {
