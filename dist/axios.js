@@ -59,6 +59,7 @@ var axios =
 	
 	// Polyfill ES6 Promise if needed
 	(function() {
+	
 	  // webpack is being used to set es6-promise to the native Promise
 	  // for the standalone build. It's necessary to make sure polyfill exists.
 	  var P = __webpack_require__(9)
@@ -68,6 +69,7 @@ var axios =
 	})()
 	
 	var axios = module.exports = function axios(config) {
+	
 	  config = utils.merge({
 	    method: 'get',
 	    headers: {},
@@ -134,31 +136,34 @@ var axios =
 	}
 	
 	// Provide aliases for supported request methods
-	createShortMethods('delete', 'get', 'head');
-	createShortMethodsWithData('post', 'put', 'patch');
+	(function () {
+	  function createShortMethods() {
+	    utils.forEach(arguments, function (method) {
+	      axios[method] = function (url, config) {
+	        return axios(utils.merge(config || {}, {
+	          method: method,
+	          url: url,
+	        }))
+	      }
+	    })
+	  }
+	  
+	  function createShortMethodsWithData() {
+	    utils.forEach(arguments, function (method) {
+	      axios[method] = function (url, data, config) {
+	        return axios(utils.merge(config || {}, {
+	          method: method,
+	          url: url,
+	          data: data,
+	        }))
+	      }
+	    })
+	  }
 	
-	function createShortMethods() {
-	  utils.forEach(arguments, function (method) {
-	    axios[method] = function (url, config) {
-	      return axios(utils.merge(config || {}, {
-	        method: method,
-	        url: url,
-	      }))
-	    }
-	  })
-	}
-	
-	function createShortMethodsWithData() {
-	  utils.forEach(arguments, function (method) {
-	    axios[method] = function (url, data, config) {
-	      return axios(utils.merge(config || {}, {
-	        method: method,
-	        url: url,
-	        data: data,
-	      }))
-	    }
-	  })
-	}
+	  createShortMethods('delete', 'get', 'head')
+	  createShortMethodsWithData('post', 'put', 'patch')
+	})()
+
 
 /***/ }),
 /* 2 */
@@ -168,8 +173,6 @@ var axios =
 	
 	var utils = __webpack_require__(3)
 	
-	var JSON_START = /^\s*(\[|\{[^\{])/;
-	var JSON_END = /[\}\]]\s*$/;
 	var PROTECTION_PREFIX = /^\)\]\}',?\n/;
 	var DEFAULT_CONTENT_TYPE = {
 	  'Content-Type': 'application/x-www-form-urlencoded'
@@ -199,8 +202,9 @@ var axios =
 	    if (typeof data === 'string') {
 	      data = data.replace(PROTECTION_PREFIX, '')
 	    }
-	    if (JSON_START.test(data) && JSON_END.test(data)) {
-	      data = JSON.parse(data)
+	    try {
+	      data = JSOON.parse(data)
+	    } catch (e) {
 	    }
 	    return data
 	  }],
@@ -223,6 +227,8 @@ var axios =
 /* 3 */
 /***/ (function(module, exports) {
 
+	'use strict';
+	
 	// utils is a library of generic helper functions non-specific to axios
 	
 	var toString = Object.prototype.toString
@@ -411,7 +417,7 @@ var axios =
 	 * @param {Object} obj1 Object to merge
 	 * @returns {Object} Result of all merge properties
 	 */
-	function merge(obj1/*, obj2, obj3, ...*/) {
+	function merge(/*obj1, obj2, obj3, ...*/) {
 	  var result = {}
 	
 	  forEach(arguments, function(obj) {
@@ -699,6 +705,8 @@ var axios =
 /* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var utils = __webpack_require__(3)
 	
 	function InterceptorManager() {
@@ -2025,6 +2033,8 @@ var axios =
 /* 15 */
 /***/ (function(module, exports) {
 
+	'use strict';
+	
 	/**
 	 * Syntactic sugar for invoking a function and expanding an array for arguments.
 	 *
