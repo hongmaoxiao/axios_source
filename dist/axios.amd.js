@@ -179,6 +179,9 @@ define("axios", ["undefined"], function(__WEBPACK_EXTERNAL_MODULE_7__) { return 
 	
 	module.exports = {
 	  transformRequest: [function (data, headers) {
+	    if (ultils.isFormData(data)) {
+	      return data
+	    }
 	    if (utils.isArrayBuffer(data)) {
 	      return data
 	    }
