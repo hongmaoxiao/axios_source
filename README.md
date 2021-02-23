@@ -140,7 +140,6 @@ You can create a new instance of axios with a custom config.
 
 ```js
 var instance = axios.create({
-  baseURL: 'https://some-domain.com/api/',
   timeout: 1000,
   headers: {'X-Custom-Header': 'foobar'}
 });
@@ -166,11 +165,6 @@ These are the available config options for making requests. Only the `url` is re
 {
   // `url` is the server URL that will be used for the request
   url: '/user',
-  
-  // `baseURL` will be prepended to `url` unless `url` is absolute. 
-  // It can be convenient to set `baseURL` for an instance of axios to pass relative URLs 
-  // to methods of that instance.
-  baseURL: 'https://some-domain.com/api/',
 
   // `method` is the request method to be used when making the request
   method: 'get', // default
@@ -220,6 +214,14 @@ These are the available config options for making requests. Only the `url` is re
   // `withCredentials` indicates whether or not cross-site Access-Control requests
   // should be made using credentials
   withCredentials: false, // default
+
+  // `auth` indicates that HTTP Basic auth should be used, and supplies credentials.
+  // The username can be supplied as `user` or `username`
+  // The password can be supplied as `pass` or `password`
+  auth: {
+    user: 'janedoe',
+    pass: 's00pers3cret'
+  }
 
   // `responseType` indicates the type of data that the server will respond with
   // options are 'arraybuffer', 'blob', 'document', 'json', 'text'
