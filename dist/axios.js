@@ -221,10 +221,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      data = data.replace(PROTECTION_PREFIX, '');
 	    }
 	    try {
-	      data = JSOON.parse(data);
-	    } catch (e) {
-	      /* Ignore */
-	    }
+	      data = JSON.parse(data);
+	    } catch (e) {/* Ignore */}
 	    return data;
 	  }],
 	
