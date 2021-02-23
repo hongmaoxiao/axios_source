@@ -91,9 +91,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }, arguments[1]);
 	  }
 	
-	  config = utils.merge(this.defaultConfig, {
-	    method: 'get'
-	  }, config);
+	  config = utils.merge(this.defaultConfig, { method: 'get' }, config);
 	
 	  if (config.baseURL && !isAbsoluteURL(config.url)) {
 	    config.url = combineURLs(config.baseURL, config.url);
