@@ -1,4 +1,5 @@
 var axios = require('../../../index');
+// var axios = require('../../../../../../source/front/axios/index');
 var http = require('http');
 var zlib = require('zlib');
 var server;
@@ -22,6 +23,8 @@ module.exports = {
       res.end(JSON.stringify(data));
     }).listen(4444, function () {
       axios.get('http://localhost:4444/').then(function (res) {
+        console.log('res.data: ', res.data)
+        console.log('data: ', data)
         test.deepEqual(res.data, data);
         test.done();
       });
