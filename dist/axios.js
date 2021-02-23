@@ -65,11 +65,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	var dispatchRequest = __webpack_require__(4);
 	var InterceptorManager = __webpack_require__(7);
 	
-	var axios = module.exports = function axios(config) {
+	var axios = module.exports = function (config) {
+	  // Allow for axios('example/url'[, config]) a la fetch API
+	  if (typeof config === 'string') {
+	    config = utils.merge({
+	      url: arguments[0]
+	    }, arguments[1])
+	  }
 	
 	  config = utils.merge({
 	    method: 'get',
 	    headers: {},
+	    timeout: defaults.timeout,
 	    transformRequest: defaults.transformRequest,
 	    transformResponse: defaults.transformResponse,
 	  }, config)
@@ -359,6 +366,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	
 	/**
+	 * Determine if we're running in a standard browser environment
+	 *
+	 * This allows axios to run in a web worker, and react-native.
+	 * Both environments support XMLHttpRequest, but not fully standard globals.
+	 *
+	 * web workers:
+	 *  typeof window -> undefined
+	 *  typeof document -> undefined
+	 *
+	 * react-native:
+	 *  typeof document.createelement -> undefined
+	 */
+	function isStandardBrowserEnv() {
+	  return (
+	    typeof window !== 'undefined' &&
+	    typeof document !== 'undefined' &&
+	    typeof document.createElement === 'function'
+	  )
+	}
+	
+	/**
 	 * Iterate over an Array or an Object invoking a function for each item.
 	 *
 	 * If `obj` is an Array or arguments callback will be called passing
@@ -441,6 +469,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  isDate: isDate,
 	  isFile: isFile,
 	  isBlob: isBlob,
+	  isStandardBrowserEnv: isStandardBrowserEnv,
 	  forEach: forEach,
 	  merge: merge,
 	  trim: trim
