@@ -70,7 +70,7 @@ module.exports = function(config) {
     if (runAll || process.env.SAUCE_IE) {
       // TODO These need to be fixed
       // customLaunchers.SL_IE8 = createCustomLauncher('internet explorer', 8, 'Windows 7');
-      customLaunchers.SL_IE9 = createCustomLauncher('internet explorer', 9, 'Windows 2008');
+      // customLaunchers.SL_IE9 = createCustomLauncher('internet explorer', 9, 'Windows 2008');
       customLaunchers.SL_IE10 = createCustomLauncher('internet explorer', 10, 'Windows 2012');
       customLaunchers.SL_IE11 = createCustomLauncher('internet explorer', 11, 'Windows 8.1');
     }
@@ -111,7 +111,8 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'test/specs/**/*.spec.js'
+      'test/specs/__helpers.js',
+      'test/specs/**/*.spec.js',
     ],
 
 
@@ -124,6 +125,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
+      'test/specs/__helpers.js': ['webpack', 'sourcemap'],
       'test/specs/**/*.spec.js': ['webpack', 'sourcemap']
     },
 
