@@ -72,7 +72,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var transformData = __webpack_require__(8);
 	
 	function Axios(defaultConfig) {
-	  this.defaults = utils.merge({}, defaultConfig)
+	  this.defaults = utils.merge({}, defaultConfig);
 	
 	  this.interceptors = {
 	    request: new InterceptorManager(),
@@ -524,13 +524,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var adapter;
 	      if (typeof config.adapter === 'function') {
 	        // For custom adapter support
-	        adapter = config.adapter
+	        adapter = config.adapter;
 	      } else if (typeof XMLHttpRequest !== 'undefined') {
 	        // For browsers use XHR adapter
-	        adapter = __webpack_require__(5)
+	        adapter = __webpack_require__(5);
 	      } else if (typeof process !== 'undefined') {
 	        // For node use HTTP adapter
-	        adapter = __webpack_require__(5)
+	        adapter = __webpack_require__(5);
 	      }
 	
 	      if (typeof adapter === 'function') {
@@ -600,8 +600,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        responseHeaders,
 	        config.transformResponse
 	      ),
-	      status: request.status,
-	      statusText: request.statusText,
+	      // IE sends 1223 instead of 204 (https://github.com/mzabriskie/axios/issues/201)
+	      status: request.status === 1223 ? 204 : request.status,
+	      statusText: request.status === 1223 ? 'No Content' : request.statusText,
 	      headers: responseHeaders,
 	      config: config
 	    };
@@ -610,6 +611,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    ((request.status >= 200 && request.status < 300) || (!('status' in request) && request.responseText) ?
 	      resolve :
 	      reject)(response);
+	
+	    // Clean up request
+	    request = null;
+	  };
+	
+	  // Handle low level network errors
+	  request.onerror = function handleError() {
+	    // Real errors are hidden from us by the browser
+	    // onerror should only fire if it's a network error
+	    reject(new Error('Network Error'));
 	
 	    // Clean up request
 	    request = null;
