@@ -61,6 +61,7 @@ module.exports = function(config) {
 
     // Opera
     if (runAll || process.env.SAUCE_OPERA) {
+      // TODO The available versions of Opera are too old and lack basic APIs
       // customLaunchers.SL_Opera11 = createCustomLauncher('opera', 11, 'Windows XP');
       // customLaunchers.SL_Opera12 = createCustomLauncher('opera', 12, 'Windows 7');
     }
