@@ -1,6 +1,5 @@
 describe('static api', function () {
   it('should have request method helpers', function () {
-    expect(typeof axios.request).toEqual('function');
     expect(typeof axios.get).toEqual('function');
     expect(typeof axios.head).toEqual('function');
     expect(typeof axios.delete).toEqual('function');
