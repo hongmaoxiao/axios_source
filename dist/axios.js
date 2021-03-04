@@ -737,6 +737,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	      );
 	
 	      return response;
+	    }, function onRejected(error) {
+	      // Transform response data
+	      if (error && error.response) {
+	        error.response.data = transformData(
+	          error.response.data,
+	          error.response.headers,
+	          config.transformResponse
+	        );
+	      }
+	
+	      return Promise.reject(error);
 	    });
 	};
 
