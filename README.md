@@ -247,8 +247,8 @@ These are the available config options for making requests. Only the `url` is re
   withCredentials: false, // default
 
   // `adapter` allows custom handling of requests which makes testing easier.
-  // Call `resolve` or `reject` and supply a valid response (see [response docs](#response-api)).
-  adapter: function (resolve, reject, config) {
+  // Return a promise and supply a valid response (see [response docs](#response-api)).
+  adapter: function (config) {
     /* ... */
   },
 
@@ -289,7 +289,13 @@ These are the available config options for making requests. Only the `url` is re
 
   // `maxRedirects` defines the maximum number of redirects to follow in node.js.
   // If set to 0, no redirects will be followed.
-  maxRedirects: 5 // default
+  maxRedirects: 5, // default
+
+  // `httpAgent` and `httpsAgent` define a custom agent to be used when performing http
+  // and https requests, respectively, in node.js. This allows to configure options like
+  // `keepAlive` that are not enabled by default.
+  httpAgent: new http.Agent({ keepAlive: true }),
+  httpsAgent: new https.Agent({ keepAlive: true })
 }
 ```
 
