@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("undefined"));
+		module.exports = factory();
 	else if(typeof define === 'function' && define.amd)
-		define(["undefined"], factory);
+		define([], factory);
 	else if(typeof exports === 'object')
-		exports["axios"] = factory(require("undefined"));
+		exports["axios"] = factory();
 	else
-		root["axios"] = factory(root["undefined"]);
-})(this, function(__WEBPACK_EXTERNAL_MODULE_16__) {
+		root["axios"] = factory();
+})(this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -97,15 +97,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 	
 	// Expose Cancel & CancelToken
-	axios.Cancel = __webpack_require__(23);
-	axios.CancelToken = __webpack_require__(24);
-	axios.isCancel = __webpack_require__(20);
+	axios.Cancel = __webpack_require__(22);
+	axios.CancelToken = __webpack_require__(23);
+	axios.isCancel = __webpack_require__(19);
 	
 	// Expose all/spread
 	axios.all = function all(promises) {
 	  return Promise.all(promises);
 	};
-	axios.spread = __webpack_require__(25);
+	axios.spread = __webpack_require__(24);
 	
 	module.exports = axios;
 	
@@ -443,10 +443,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var defaults = __webpack_require__(5);
 	var utils = __webpack_require__(2);
-	var InterceptorManager = __webpack_require__(17);
-	var dispatchRequest = __webpack_require__(18);
-	var isAbsoluteURL = __webpack_require__(21);
-	var combineURLs = __webpack_require__(22);
+	var InterceptorManager = __webpack_require__(16);
+	var dispatchRequest = __webpack_require__(17);
+	var isAbsoluteURL = __webpack_require__(20);
+	var combineURLs = __webpack_require__(21);
 	
 	/**
 	 * Create a new instance of Axios
@@ -553,14 +553,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    adapter = __webpack_require__(7);
 	  } else if (typeof process !== 'undefined') {
 	    // For node use HTTP adapter
-	    adapter = __webpack_require__(16);
+	    adapter = __webpack_require__(7);
 	  }
 	  return adapter;
 	}
 	
 	module.exports = {
 	  adapter: getDefaultAdapter(),
-	  
+	
 	  transformRequest: [function transformRequest(data, headers) {
 	    normalizeHeaderName(headers, 'Content-Type');
 	    if (utils.isFormData(data) ||
@@ -1188,12 +1188,6 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ }),
 /* 16 */
-/***/ (function(module, exports) {
-
-	module.exports = undefined;
-
-/***/ }),
-/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1251,14 +1245,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var utils = __webpack_require__(2);
-	var transformData = __webpack_require__(19);
-	var isCancel = __webpack_require__(20);
+	var transformData = __webpack_require__(18);
+	var isCancel = __webpack_require__(19);
 	var defaults = __webpack_require__(5);
 	
 	/**
@@ -1307,37 +1301,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var adapter = config.adapter || defaults.adapter;
 	
 	  return adapter(config).then(function onAdapterResolution(response) {
+	    throwIfCancellationRequested(config);
+	
+	    // Transform response data
+	    response.data = transformData(
+	      response.data,
+	      response.headers,
+	      config.transformResponse
+	    );
+	
+	    return response;
+	  }, function onAdapterRejection(reason) {
+	    if (!isCancel(reason)) {
 	      throwIfCancellationRequested(config);
 	
 	      // Transform response data
-	      response.data = transformData(
-	        response.data,
-	        response.headers,
-	        config.transformResponse
-	      );
-	
-	      return response;
-	    }, function onAdapterRejection(reason) {
-	      if (!isCancel(reason)) {
-	        throwIfCancellationRequested(config);
-	
-	        // Transform response data
-	        if (reason && reason.response) {
-	          reason.response.data = transformData(
-	            reason.response.data,
-	            reason.response.headers,
-	            config.transformResponse
-	          );
-	        }
+	      if (reason && reason.response) {
+	        reason.response.data = transformData(
+	          reason.response.data,
+	          reason.response.headers,
+	          config.transformResponse
+	        );
 	      }
+	    }
 	
-	      return Promise.reject(reason);
-	    });
+	    return Promise.reject(reason);
+	  });
 	};
 
 
 /***/ }),
-/* 19 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1363,7 +1357,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 20 */
+/* 19 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -1372,8 +1366,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return !!(value && value.__CANCEL__);
 	};
 
+
 /***/ }),
-/* 21 */
+/* 20 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -1393,7 +1388,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 22 */
+/* 21 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -1411,7 +1406,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 23 */
+/* 22 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -1434,13 +1429,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	module.exports = Cancel;
 
+
 /***/ }),
-/* 24 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var Cancel = __webpack_require__(23);
+	var Cancel = __webpack_require__(22);
 	
 	/**
 	 * A `CancelToken` is an object that can be used to request cancellation of an operation.
@@ -1467,7 +1463,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	    token.reason = new Cancel(message);
 	    resolvePromise(token.reason);
-	  })
+	  });
 	}
 	
 	/**
@@ -1499,7 +1495,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ }),
-/* 25 */
+/* 24 */
 /***/ (function(module, exports) {
 
 	'use strict';
