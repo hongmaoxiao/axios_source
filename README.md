@@ -473,7 +473,7 @@ axios.get('/user/12345', {
 
 You can cancel a request using a *cancel token*.
 
-> The axios cancel token API is based on the withdrawn [cancelable promises proposal](https://github.com/tc39/proposal-cancelable-promises).
+> The axios cancel token API is based on the [cancelable promises proposal](https://github.com/tc39/proposal-cancelable-promises), which is currently at Stage 1.
 
 You can create a cancel token using the `CancelToken.source` factory as shown below:
 
@@ -544,7 +544,7 @@ In node.js, you can use the [`querystring`](https://nodejs.org/api/querystring.h
 
 ```js
 var querystring = require('querystring');
-axios.post('http://something.com/', querystring.stringify({ foo: 'bar' });
+axios.post('http://something.com/', querystring.stringify({ foo: 'bar' }));
 ```
 
 You can also use the `qs` library.
