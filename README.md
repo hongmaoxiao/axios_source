@@ -248,7 +248,7 @@ These are the available config options for making requests. Only the `url` is re
   withCredentials: false, // default
 
   // `adapter` allows custom handling of requests which makes testing easier.
-  // Return a promise and supply a valid response (see [response docs](#response-api)).
+  // Return a promise and supply a valid response (see lib/adapters/README.md).
   adapter: function (config) {
     /* ... */
   },
@@ -544,7 +544,7 @@ In node.js, you can use the [`querystring`](https://nodejs.org/api/querystring.h
 
 ```js
 var querystring = require('querystring');
-axios.post('http://something.com/', querystring.stringify({ foo: 'bar' }));
+axios.post('http://something.com/', querystring.stringify({ foo: 'bar' });
 ```
 
 You can also use the `qs` library.
