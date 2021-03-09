@@ -295,13 +295,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	 *  typeof document -> undefined
 	 *
 	 * react-native:
-	 *  typeof document.createElement -> undefined
+	 *  navigator.product -> 'ReactNative'
 	 */
 	function isStandardBrowserEnv() {
+	  if (typeof navigator !== 'undefined' && navigator.product === 'ReactNative') {
+	    return false;
+	  }
 	  return (
 	    typeof window !== 'undefined' &&
-	    typeof document !== 'undefined' &&
-	    typeof document.createElement === 'function'
+	    typeof document !== 'undefined'
 	  );
 	}
 	
@@ -503,7 +505,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 	
 	// Provide aliases for supported request methods
-	utils.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
+	utils.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData(method) {
 	  /*eslint func-names:0*/
 	  Axios.prototype[method] = function(url, config) {
 	    return this.request(utils.merge(config || {}, {
@@ -536,7 +538,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var utils = __webpack_require__(2);
 	var normalizeHeaderName = __webpack_require__(6);
 	
-	var PROTECTION_PREFIX = /^\)\]\}',?\n/;
 	var DEFAULT_CONTENT_TYPE = {
 	  'Content-Type': 'application/x-www-form-urlencoded'
 	};
@@ -590,7 +591,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  transformResponse: [function transformResponse(data) {
 	    /*eslint no-param-reassign:0*/
 	    if (typeof data === 'string') {
-	      data = data.replace(PROTECTION_PREFIX, '');
 	      try {
 	        data = JSON.parse(data);
 	      } catch (e) { /* Ignore */ }
@@ -616,15 +616,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	};
 	
-	utils.forEach(['delete', 'get', 'head'], function forEachMehtodNoData(method) {
+	utils.forEach(['delete', 'get', 'head'], function forEachMethodNoData(method) {
 	  defaults.headers[method] = {};
 	});
 	
-	utils.forEach(['post', 'put', 'patch'], function forEachMehtodNoData(method) {
+	utils.forEach(['post', 'put', 'patch'], function forEachMethodNoData(method) {
 	  defaults.headers[method] = utils.merge(DEFAULT_CONTENT_TYPE);
 	});
 	
 	module.exports = defaults;
+
 
 /***/ }),
 /* 6 */
@@ -786,6 +787,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      try {
 	        request.responseType = config.responseType;
 	      } catch (e) {
+	        // Expected DOMException thrown by browsers not compatible XMLHttpRequest Level 2.
+	        // But, this can be suppressed for 'json' type as it can be parsed by default 'transformResponse' function.
 	        if (request.responseType !== 'json') {
 	          throw e;
 	        }
@@ -1411,7 +1414,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @returns {string} The combined URL
 	 */
 	module.exports = function combineURLs(baseURL, relativeURL) {
-	  return baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '');
+	  return relativeURL
+	   ? baseURL.replace(/\/+$/, '') + '/' + relativeURL.replace(/^\/+/, '')
+	   : baseURL;
 	};
 
 
