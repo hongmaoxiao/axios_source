@@ -213,8 +213,7 @@ These are the available config options for making requests. Only the `url` is re
 
   // `transformRequest` allows changes to the request data before it is sent to the server
   // This is only applicable for request methods 'PUT', 'POST', and 'PATCH'
-  // The last function in the array must return a string or an instance of Buffer, ArrayBuffer,
-  // FormData or Stream
+  // The last function in the array must return a string, an ArrayBuffer, FormData, or a Stream
   transformRequest: [function (data) {
     // Do whatever you want to transform the data
 
@@ -249,7 +248,7 @@ These are the available config options for making requests. Only the `url` is re
   // When no `transformRequest` is set, must be of one of the following types:
   // - string, plain object, ArrayBuffer, ArrayBufferView, URLSearchParams
   // - Browser only: FormData, File, Blob
-  // - Node only: Stream, Buffer
+  // - Node only: Stream
   data: {
     firstName: 'Fred'
   },
@@ -312,16 +311,14 @@ These are the available config options for making requests. Only the `url` is re
   maxRedirects: 5, // default
 
   // `httpAgent` and `httpsAgent` define a custom agent to be used when performing http
-  // and https requests, respectively, in node.js. This allows options to be added like
+  // and https requests, respectively, in node.js. This allows to configure options like
   // `keepAlive` that are not enabled by default.
   httpAgent: new http.Agent({ keepAlive: true }),
   httpsAgent: new https.Agent({ keepAlive: true }),
 
   // 'proxy' defines the hostname and port of the proxy server
-  // `auth` indicates that HTTP Basic auth should be used to connect to the proxy, and
-  // supplies credentials.
-  // This will set an `Proxy-Authorization` header, overwriting any existing
-  // `Proxy-Authorization` custom headers you have set using `headers`.
+  // `auth` indicates that HTTP Basic auth should be used to connect to the proxy, and supplies credentials.
+  // This will set an `Proxy-Authorization` header, overwriting any existing `Proxy-Authorization` custom headers you have set using `headers`.
   proxy: {
     host: '127.0.0.1',
     port: 9000,
@@ -354,11 +351,15 @@ The response for a request contains the following information.
   statusText: 'OK',
 
   // `headers` the headers that the server responded with
-  // All header names are lower cased
   headers: {},
 
   // `config` is the config that was provided to `axios` for the request
-  config: {}
+  config: {},
+
+  // `request` is the request that generated this response
+  // It is the last ClientRequest instance in node.js (in redirects)
+  // and an XMLHttpRequest instance the browser
+  request: {}
 }
 ```
 
